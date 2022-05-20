@@ -42,7 +42,7 @@ class SectionServiceTest {
 
     @BeforeEach
     void setUp() {
-        sectionService = new SectionService(new SectionDao(jdbcTemplate));
+        sectionService = new SectionService(new SectionDao(jdbcTemplate), new StationDao(jdbcTemplate));
 
         LineService lineService = new LineService(new LineDao(jdbcTemplate), new StationDao(jdbcTemplate),
                 new SectionDao(jdbcTemplate));
@@ -74,8 +74,8 @@ class SectionServiceTest {
         Sections sections = sectionService.getSectionsByLineId(lineId);
         boolean isCreatedSectionExisting = sections.getValue()
                 .stream()
-                .anyMatch(section -> section.getUpStationId().equals(sectionRequest.getUpStationId())
-                        && section.getDownStationId().equals(sectionRequest.getDownStationId()));
+                .anyMatch(section -> section.getUpStation().getId().equals(sectionRequest.getUpStationId())
+                        && section.getDownStation().getId().equals(sectionRequest.getDownStationId()));
 
         assertThat(isCreatedSectionExisting).isTrue();
     }
@@ -96,8 +96,8 @@ class SectionServiceTest {
         Sections sections = sectionService.getSectionsByLineId(lineId);
         boolean isCreatedSectionExisting = sections.getValue()
                 .stream()
-                .anyMatch(section -> section.getUpStationId().equals(sectionRequest.getUpStationId())
-                        && section.getDownStationId().equals(sectionRequest.getDownStationId()));
+                .anyMatch(section -> section.getUpStation().getId().equals(sectionRequest.getUpStationId())
+                        && section.getDownStation().getId().equals(sectionRequest.getDownStationId()));
 
         assertThat(isCreatedSectionExisting).isTrue();
     }
@@ -118,8 +118,8 @@ class SectionServiceTest {
         Sections sections = sectionService.getSectionsByLineId(lineId);
         boolean isCreatedSectionExisting = sections.getValue()
                 .stream()
-                .anyMatch(section -> section.getUpStationId().equals(sectionRequest.getUpStationId())
-                        && section.getDownStationId().equals(sectionRequest.getDownStationId()));
+                .anyMatch(section -> section.getUpStation().getId().equals(sectionRequest.getUpStationId())
+                        && section.getDownStation().getId().equals(sectionRequest.getDownStationId()));
 
         assertThat(isCreatedSectionExisting).isTrue();
     }

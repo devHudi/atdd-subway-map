@@ -83,10 +83,10 @@ public class Sections {
     }
 
     private Section shortenBaseSection(Section baseSection, Section newSection) {
-        Long baseUp = baseSection.getUpStationId();
-        Long newUp = newSection.getUpStationId();
-        Long newDown = newSection.getDownStationId();
-        Long baseDown = baseSection.getDownStationId();
+        Station baseUp = baseSection.getUpStation();
+        Station newUp = newSection.getUpStation();
+        Station newDown = newSection.getDownStation();
+        Station baseDown = baseSection.getDownStation();
         Distance shortenedDistance = baseSection.subtractDistance(newSection);
 
         if (newSection.isUpStationSame(baseSection)) {
@@ -96,11 +96,13 @@ public class Sections {
         return new Section(baseUp, newUp, shortenedDistance);
     }
 
-    public void deleteStation(Long stationId) {
+    public void deleteStation(Station station) {
         validateHasSingleSection();
 
-        Optional<Section> upSection = getUpSection(stationId);
-        Optional<Section> downSection = getDownSection(stationId);
+        Optional<Section> upSection = getUpSection(station);
+        Optional<Section> downSection = getDownSection(station);
+
+        System.out.println("deleteStation: " + sections);
 
         upSection.ifPresent(sections::remove);
         downSection.ifPresent(sections::remove);
@@ -116,15 +118,15 @@ public class Sections {
         }
     }
 
-    private Optional<Section> getUpSection(Long stationId) {
+    private Optional<Section> getUpSection(Station station) {
         return sections.stream()
-                .filter(section -> section.hasStationIdAsDownStation(stationId))
+                .filter(section -> section.hasStationIdAsDownStation(station))
                 .findAny();
     }
 
-    private Optional<Section> getDownSection(Long stationId) {
+    private Optional<Section> getDownSection(Station station) {
         return sections.stream()
-                .filter(section -> section.hasStationIdAsUpStation(stationId))
+                .filter(section -> section.hasStationIdAsUpStation(station))
                 .findAny();
     }
 

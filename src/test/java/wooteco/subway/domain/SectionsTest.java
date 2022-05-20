@@ -19,9 +19,18 @@ class SectionsTest {
     private Section initialSection;
     private Sections sections;
 
+    private Station station1;
+    private Station station2;
+    private Station station3;
+    private Station station4;
+
     @BeforeEach
     void setUp() {
-        initialSection = new Section(1L, 2L, new Distance(10));
+        station1 = new Station(1L, "잠실역");
+        station2 = new Station(2L, "선릉역");
+        station3 = new Station(3L, "몽촌토성역");
+        station4 = new Station(4L, "삼성역");
+        initialSection = new Section(station1, station2, new Distance(10));
         sections = new Sections(List.of(initialSection));
     }
 
@@ -29,10 +38,10 @@ class SectionsTest {
     @Test
     void constructor() {
         // given
-        Long upStationId = 1L;
-        Long downStationId = 2L;
+        Station upStation = station1;
+        Station downStation = station2;
         Distance distance = new Distance(10);
-        Section section = new Section(upStationId, downStationId, distance);
+        Section section = new Section(upStation, downStation, distance);
 
         // when
         Sections sections = new Sections(List.of(section));
@@ -45,7 +54,7 @@ class SectionsTest {
     @Test
     void addSection_withNewUpStation() {
         // given
-        Section newSection = new Section(3L, 1L, new Distance(5));
+        Section newSection = new Section(station3, station1, new Distance(5));
 
         // when
         sections.addSection(newSection);
@@ -58,7 +67,7 @@ class SectionsTest {
     @Test
     void addSection_withNewDownStation() {
         // given
-        Section newSection = new Section(2L, 4L, new Distance(5));
+        Section newSection = new Section(station2, station4, new Distance(5));
 
         // when
         sections.addSection(newSection);
@@ -71,14 +80,15 @@ class SectionsTest {
     @Test
     void addSection_insertingUpStation() {
         // given
-        Section newSection = new Section(1L, 3L, new Distance(5));
+        Section newSection = new Section(station1, station3, new Distance(5));
 
         // when
         sections.addSection(newSection);
         List<Section> actual = sections.getValue();
 
         // then
-        List<Section> expected = List.of(new Section(1L, 3L, new Distance(5)), new Section(3L, 2L, new Distance(5)));
+        List<Section> expected = List.of(new Section(station1, station3, new Distance(5)),
+                new Section(station3, station2, new Distance(5)));
         assertThat(actual).containsAll(expected);
     }
 
@@ -86,14 +96,15 @@ class SectionsTest {
     @Test
     void addSection_insertingDownStation() {
         // given
-        Section newSection = new Section(3L, 2L, new Distance(5));
+        Section newSection = new Section(station3, station2, new Distance(5));
 
         // when
         sections.addSection(newSection);
         List<Section> actual = sections.getValue();
 
         // then
-        List<Section> expected = List.of(new Section(1L, 3L, new Distance(5)), new Section(3L, 2L, new Distance(5)));
+        List<Section> expected = List.of(new Section(station1, station3, new Distance(5)),
+                new Section(station3, station2, new Distance(5)));
         assertThat(actual).containsAll(expected);
     }
 
@@ -102,7 +113,7 @@ class SectionsTest {
     @ValueSource(ints = {10, 15, 100})
     void addSection_throwsExceptionOnTryingToInsertLongerSection(int distance) {
         // given
-        Section newSection = new Section(3L, 2L, new Distance(distance));
+        Section newSection = new Section(station3, station2, new Distance(distance));
 
         // when & then
         assertThatThrownBy(() -> sections.addSection(newSection))
@@ -113,7 +124,7 @@ class SectionsTest {
     @Test
     void addSection_throwsExceptionIfBothUpAndDownStationAlreadyExistsInSections() {
         // given
-        Section newSection = new Section(1L, 2L, new Distance(5));
+        Section newSection = new Section(station1, station2, new Distance(5));
 
         // when & then
         assertThatThrownBy(() -> sections.addSection(newSection))
@@ -124,7 +135,7 @@ class SectionsTest {
     @Test
     void addSection_throwsExceptionIfBothUpAndDownStationDoNotExistInSections() {
         // given
-        Section newSection = new Section(3L, 4L, new Distance(5));
+        Section newSection = new Section(station3, station4, new Distance(5));
 
         // when & then
         assertThatThrownBy(() -> sections.addSection(newSection))
@@ -135,16 +146,16 @@ class SectionsTest {
     @Test
     void deleteStation_upStation() {
         // given
-        sections.addSection(new Section(2L, 3L, new Distance(10)));
-        sections.addSection(new Section(3L, 4L, new Distance(10)));
+        sections.addSection(new Section(station2, station3, new Distance(10)));
+        sections.addSection(new Section(station3, station4, new Distance(10)));
 
         // when
-        sections.deleteStation(1L);
+        sections.deleteStation(station1);
 
         // then
         assertThat(sections.getValue()).containsAll(List.of(
-                new Section(2L, 3L, new Distance(10)),
-                new Section(3L, 4L, new Distance(10))
+                new Section(station2, station3, new Distance(10)),
+                new Section(station3, station4, new Distance(10))
         ));
     }
 
@@ -153,16 +164,16 @@ class SectionsTest {
     @Test
     void deleteStation_downStation() {
         // given
-        sections.addSection(new Section(2L, 3L, new Distance(10)));
-        sections.addSection(new Section(3L, 4L, new Distance(10)));
+        sections.addSection(new Section(station2, station3, new Distance(10)));
+        sections.addSection(new Section(station3, station4, new Distance(10)));
 
         // when
-        sections.deleteStation(4L);
+        sections.deleteStation(station4);
 
         // then
         assertThat(sections.getValue()).containsAll(List.of(
-                new Section(1L, 2L, new Distance(10)),
-                new Section(2L, 3L, new Distance(10))
+                new Section(station1, station2, new Distance(10)),
+                new Section(station2, station3, new Distance(10))
         ));
     }
 
@@ -170,23 +181,23 @@ class SectionsTest {
     @Test
     void deleteStation_betweenStation() {
         // given
-        sections.addSection(new Section(2L, 3L, new Distance(10)));
-        sections.addSection(new Section(3L, 4L, new Distance(10)));
+        sections.addSection(new Section(station2, station3, new Distance(10)));
+        sections.addSection(new Section(station3, station4, new Distance(10)));
 
         // when
-        sections.deleteStation(3L);
+        sections.deleteStation(station3);
 
         // then
         assertThat(sections.getValue()).containsAll(List.of(
-                new Section(1L, 2L, new Distance(10)),
-                new Section(2L, 4L, new Distance(20))
+                new Section(station1, station2, new Distance(10)),
+                new Section(station2, station4, new Distance(20))
         ));
     }
 
     @DisplayName("구간이 단 하나인 구간 목록에서 구간 제거를 하면 예외가 발생한다.")
     @Test
     void deleteStation_throwsExceptionIfSectionsSizeIsOne() {
-        assertThatThrownBy(() -> sections.deleteStation(1L))
+        assertThatThrownBy(() -> sections.deleteStation(station1))
                 .isInstanceOf(OnlyOneSectionException.class);
     }
 }

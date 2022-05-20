@@ -10,14 +10,15 @@ import org.springframework.stereotype.Repository;
 import wooteco.subway.domain.Distance;
 import wooteco.subway.domain.Section;
 import wooteco.subway.domain.Sections;
+import wooteco.subway.domain.Station;
 
 @Repository
 public class SectionDao {
 
-    public static final RowMapper<Section> SECTION_ROW_MAPPER = (rs, rowNum) -> new Section(
+    private static final RowMapper<Section> SECTION_ROW_MAPPER = (rs, rowNum) -> new Section(
             rs.getLong("id"),
-            rs.getLong("up_station_id"),
-            rs.getLong("down_station_id"),
+            new Station(rs.getLong("up_station_id"), rs.getString("up_station_name")),
+            new Station(rs.getLong("down_station_id"), rs.getString("down_station_name")),
             new Distance(rs.getInt("distance"))
     );
 
@@ -28,10 +29,14 @@ public class SectionDao {
     }
 
     public Sections findSectionsByLineId(Long lineId) {
-        String sql = "SELECT id, up_station_id, down_station_id, distance FROM SECTION WHERE line_id = ?";
+        String sql =
+                "SELECT SECTION.id, UP_STATION.id AS up_station_id, UP_STATION.name AS up_station_name, "
+                        + "DOWN_STATION.id AS down_station_id, DOWN_STATION.name AS down_station_name, distance FROM SECTION "
+                        + "INNER JOIN STATION AS UP_STATION ON SECTION.up_station_id = UP_STATION.id "
+                        + "INNER JOIN STATION AS DOWN_STATION ON SECTION.down_station_id = DOWN_STATION.id "
+                        + "WHERE line_id = ?";
 
         List<Section> sections = jdbcTemplate.query(sql, SECTION_ROW_MAPPER, lineId);
-
         return new Sections(sections);
     }
 
@@ -42,8 +47,8 @@ public class SectionDao {
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, new String[]{"id"});
             ps.setLong(1, lineId);
-            ps.setLong(2, section.getUpStationId());
-            ps.setLong(3, section.getDownStationId());
+            ps.setLong(2, section.getUpStation().getId());
+            ps.setLong(3, section.getDownStation().getId());
             ps.setInt(4, section.getDistance().getValue());
             return ps;
         }, keyHolder);

@@ -18,6 +18,7 @@ import wooteco.subway.dto.LineUpdateRequest;
 import wooteco.subway.dto.StationResponse;
 import wooteco.subway.exception.DuplicateNameException;
 import wooteco.subway.exception.NotFoundLineException;
+import wooteco.subway.exception.NotFoundStationException;
 
 @Service
 @Transactional
@@ -34,14 +35,14 @@ public class LineService {
     }
 
     public LineResponse createLine(LineRequest line) {
-        Line newLine = Line.from(line);
+        Station upStation = stationDao.findById(line.getUpStationId()).orElseThrow(NotFoundStationException::new);
+        Station downStation = stationDao.findById(line.getDownStationId()).orElseThrow(NotFoundStationException::new);
+        Section newSection = new Section(upStation, downStation, new Distance(line.getDistance()));
+        Line newLine = new Line(line.getName(), line.getColor(), newSection);
         validateDuplicateName(newLine);
 
         Line createdLine = lineDao.save(newLine);
-
-        sectionDao.save(createdLine.getId(),
-                new Section(line.getUpStationId(), line.getDownStationId(), new Distance(line.getDistance())));
-
+        sectionDao.save(createdLine.getId(), newSection);
         return LineResponse.from(createdLine, getStationResponsesByLineId(createdLine.getId()));
     }
 
@@ -67,7 +68,8 @@ public class LineService {
     }
 
     public void update(Long id, LineUpdateRequest line) {
-        Line newLine = new Line(id, line.getName(), line.getColor());
+        Line foundLine = lineDao.findById(id).orElseThrow(NotFoundLineException::new);
+        Line newLine = new Line(id, line.getName(), line.getColor(), foundLine.getSections());
         validateExistById(id);
         lineDao.update(id, newLine);
     }
@@ -86,20 +88,12 @@ public class LineService {
     }
 
     private List<StationResponse> getStationResponsesByLineId(Long lineId) {
-        List<Long> stationIds = getStationIdsByLineId(lineId);
-        List<Station> stations = stationDao.findAllByIds(stationIds);
-
-        return stations.stream()
-                .map(StationResponse::from)
-                .collect(Collectors.toList());
-    }
-
-    private List<Long> getStationIdsByLineId(Long lineId) {
-        List<Section> sections = sectionDao.findSectionsByLineId(lineId).getValue();
+        Line foundLine = lineDao.findById(lineId).orElseThrow(NotFoundLineException::new);
+        List<Section> sections = foundLine.getSections().getValue();
 
         return Stream.concat(
-                sections.stream().map(Section::getDownStationId),
-                sections.stream().map(Section::getUpStationId)
-        ).distinct().collect(Collectors.toList());
+                sections.stream().map(Section::getDownStation),
+                sections.stream().map(Section::getUpStation)
+        ).distinct().map(StationResponse::from).collect(Collectors.toList());
     }
 }

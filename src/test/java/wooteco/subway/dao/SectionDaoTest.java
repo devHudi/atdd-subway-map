@@ -26,11 +26,12 @@ class SectionDaoTest {
     private SectionDao sectionDao;
 
     private Long savedLineId;
-    private Long savedStationId1;
-    private Long savedStationId2;
-    private Long savedStationId3;
-    private Long savedStationId4;
-    private Long savedStationId5;
+    private Sections sections;
+    private Station savedStation1;
+    private Station savedStation2;
+    private Station savedStation3;
+    private Station savedStation4;
+    private Station savedStation5;
 
     @BeforeEach
     void setUp() {
@@ -39,23 +40,23 @@ class SectionDaoTest {
         LineDao lineDao = new LineDao(jdbcTemplate);
         StationDao stationDao = new StationDao(jdbcTemplate);
 
-        Line newLine = new Line("2호선", "bg-red-600");
-        savedLineId = lineDao.save(newLine).getId();
-
         Station newStation1 = new Station("선릉역");
-        savedStationId1 = stationDao.save(newStation1).getId();
+        savedStation1 = stationDao.save(newStation1);
 
         Station newStation2 = new Station("삼성역");
-        savedStationId2 = stationDao.save(newStation2).getId();
+        savedStation2 = stationDao.save(newStation2);
 
         Station newStation3 = new Station("종합운동장역");
-        savedStationId3 = stationDao.save(newStation3).getId();
+        savedStation3 = stationDao.save(newStation3);
 
         Station newStation4 = new Station("잠실새내역");
-        savedStationId4 = stationDao.save(newStation4).getId();
+        savedStation4 = stationDao.save(newStation4);
 
         Station newStation5 = new Station("잠실역");
-        savedStationId5 = stationDao.save(newStation5).getId();
+        savedStation5 = stationDao.save(newStation5);
+
+        Line newLine = new Line("2호선", "bg-red-600", new Section(newStation1, newStation2, new Distance(10)));
+        savedLineId = lineDao.save(newLine).getId();
     }
 
     @DisplayName("호선 ID를 통해 구간 목록을 가져온다.")
@@ -63,8 +64,8 @@ class SectionDaoTest {
     void findSectionsByLineId() {
         // given
         Long lineId = savedLineId;
-        Section savedSection1 = new Section(savedStationId1, savedStationId2, new Distance(10));
-        Section savedSection2 = new Section(savedStationId2, savedStationId3, new Distance(10));
+        Section savedSection1 = new Section(savedStation1, savedStation2, new Distance(10));
+        Section savedSection2 = new Section(savedStation2, savedStation3, new Distance(10));
 
         Sections sections = new Sections(List.of(savedSection1, savedSection2));
         saveSections(lineId, sections);
@@ -72,20 +73,20 @@ class SectionDaoTest {
         // when
         Sections foundSections = sectionDao.findSectionsByLineId(lineId);
         List<Section> actual = foundSections.getValue();
-        List<Long> actualUpStationIds = actual.stream().map(Section::getUpStationId).collect(Collectors.toList());
-        List<Long> actualDownStationIds = actual.stream().map(Section::getDownStationId).collect(Collectors.toList());
+        List<Station> actualUpStations = actual.stream().map(Section::getUpStation).collect(Collectors.toList());
+        List<Station> actualDownStations = actual.stream().map(Section::getDownStation).collect(Collectors.toList());
         List<Distance> actualDistances = actual.stream().map(Section::getDistance).collect(Collectors.toList());
 
         List<Section> expected = sections.getValue();
-        List<Long> expectedUpStationIds = expected.stream().map(Section::getUpStationId).collect(Collectors.toList());
-        List<Long> expectedDownStationIds = expected.stream().map(Section::getDownStationId)
+        List<Station> expectedUpStations = expected.stream().map(Section::getUpStation).collect(Collectors.toList());
+        List<Station> expectedDownStations = expected.stream().map(Section::getDownStation)
                 .collect(Collectors.toList());
         List<Distance> expectedDistances = expected.stream().map(Section::getDistance).collect(Collectors.toList());
 
         // then
         assertAll(
-                () -> assertThat(actualUpStationIds).containsAll(expectedUpStationIds),
-                () -> assertThat(actualDownStationIds).containsAll(expectedDownStationIds),
+                () -> assertThat(actualUpStations).containsAll(expectedUpStations),
+                () -> assertThat(actualDownStations).containsAll(expectedDownStations),
                 () -> assertThat(actualDistances).containsAll(expectedDistances)
         );
     }
@@ -95,10 +96,10 @@ class SectionDaoTest {
     void saveSections() {
         // given
         Long lineId = savedLineId;
-        Section section1 = new Section(savedStationId1, savedStationId2, new Distance(10));
-        Section section2 = new Section(savedStationId2, savedStationId3, new Distance(10));
-        Section section3 = new Section(savedStationId3, savedStationId4, new Distance(10));
-        Section section4 = new Section(savedStationId4, savedStationId5, new Distance(10));
+        Section section1 = new Section(savedStation1, savedStation2, new Distance(10));
+        Section section2 = new Section(savedStation2, savedStation3, new Distance(10));
+        Section section3 = new Section(savedStation3, savedStation4, new Distance(10));
+        Section section4 = new Section(savedStation4, savedStation5, new Distance(10));
         Sections sections = new Sections(List.of(section1, section2, section3, section4));
 
         // when

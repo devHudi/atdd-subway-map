@@ -1,17 +1,22 @@
 package wooteco.subway.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
+import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import wooteco.subway.domain.Distance;
 import wooteco.subway.domain.Line;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
+import wooteco.subway.domain.Section;
+import wooteco.subway.domain.Station;
+import wooteco.subway.dto.LineRequest;
+import wooteco.subway.dto.LineResponse;
+import wooteco.subway.service.LineService;
 
 @JdbcTest
 class LineDaoTest {
@@ -20,15 +25,42 @@ class LineDaoTest {
     private JdbcTemplate jdbcTemplate;
 
     private LineDao lineDao;
+    private StationDao stationDao;
+    private LineService lineService;
+
+    private Station station1;
+    private Station station2;
+    private Station station3;
+    private Station station4;
+
+    private LineResponse savedLine1;
+    private LineResponse savedLine2;
 
     @BeforeEach
     void setUp() {
         lineDao = new LineDao(jdbcTemplate);
+        stationDao = new StationDao(jdbcTemplate);
+        lineService = new LineService(lineDao, stationDao, new SectionDao(jdbcTemplate));
+
+        station1 = new Station("역일역");
+        station2 = new Station("역이역");
+        station3 = new Station("역삼역");
+        station4 = new Station("역사역");
+
+        Station savedStation1 = stationDao.save(station1);
+        Station savedStation2 = stationDao.save(station2);
+        Station savedStation3 = stationDao.save(station3);
+        Station savedStation4 = stationDao.save(station4);
+
+        savedLine1 = lineService.createLine(
+                new LineRequest("1호선", "bg-blue-600", savedStation1.getId(), savedStation2.getId(), 10));
+        savedLine2 = lineService.createLine(
+                new LineRequest("2호선", "bg-green-600", savedStation3.getId(), savedStation4.getId(), 10));
     }
 
     @Test
     void save() {
-        Line line = new Line("신분당선", "bg-red-600");
+        Line line = new Line("신분당선", "bg-red-600", new Section(station1, station2, new Distance(10)));
         Line savedLine = lineDao.save(line);
 
         assertThat(savedLine).isNotNull();
@@ -36,12 +68,6 @@ class LineDaoTest {
 
     @Test
     void findAll() {
-        Line line1 = new Line("신분당선", "bg-red-600");
-        Line line2 = new Line("분당선", "bg-green-600");
-
-        lineDao.save(line1);
-        lineDao.save(line2);
-
         List<Line> lines = lineDao.findAll();
         List<String> lineNames = lines.stream()
                 .map(Line::getName)
@@ -51,47 +77,40 @@ class LineDaoTest {
                 .collect(Collectors.toList());
 
         assertAll(
-                () -> assertThat(lineNames).containsAll(List.of("신분당선", "분당선")),
-                () -> assertThat(lineColors).containsAll(List.of("bg-red-600", "bg-green-600"))
+                () -> assertThat(lineNames).containsAll(List.of("1호선", "2호선")),
+                () -> assertThat(lineColors).containsAll(List.of("bg-blue-600", "bg-green-600"))
         );
     }
 
     @Test
     void findById() {
-        Line line1 = new Line("신분당선", "bg-red-600");
-        Line expected = lineDao.save(line1);
-        Line actual = lineDao.findById(expected.getId()).get();
+        Line actual = lineDao.findById(savedLine1.getId()).get();
 
         assertAll(
-                () -> assertThat(actual.getName()).isEqualTo(expected.getName()),
-                () -> assertThat(actual.getColor()).isEqualTo(expected.getColor())
+                () -> assertThat(actual.getName()).isEqualTo(savedLine1.getName()),
+                () -> assertThat(actual.getColor()).isEqualTo(savedLine1.getColor())
         );
     }
 
     @Test
     void update() {
-        Line line1 = new Line("신분당선", "bg-red-600");
-        Line savedLine = lineDao.save(line1);
-        Long savedId = savedLine.getId();
+        Long targetLineId = savedLine1.getId();
 
         String newLineName = "새로운 노선";
         String newLineColor = "bg-red-500";
-        Line newLine = new Line(newLineName, newLineColor);
-        lineDao.update(savedId, newLine);
+        Line newLine = new Line(newLineName, newLineColor, new Section(station2, station4, new Distance(10)));
+        lineDao.update(targetLineId, newLine);
 
         assertAll(
-                () -> assertThat(lineDao.findById(savedId).get().getName()).isEqualTo(newLineName),
-                () -> assertThat(lineDao.findById(savedId).get().getColor()).isEqualTo(newLineColor)
+                () -> assertThat(lineDao.findById(targetLineId).get().getName()).isEqualTo(newLineName),
+                () -> assertThat(lineDao.findById(targetLineId).get().getColor()).isEqualTo(newLineColor)
         );
     }
 
     @Test
     void deleteById() {
-        Line line1 = new Line("신분당선", "bg-red-600");
-        Line savedLine = lineDao.save(line1);
+        lineDao.deleteById(savedLine1.getId());
 
-        lineDao.deleteById(savedLine.getId());
-
-        assertThat(lineDao.findAll()).hasSize(0);
+        assertThat(lineDao.findAll()).hasSize(1);
     }
 }

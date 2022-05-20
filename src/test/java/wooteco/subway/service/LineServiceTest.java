@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import wooteco.subway.dao.LineDao;
 import wooteco.subway.dao.SectionDao;
 import wooteco.subway.dao.StationDao;
-import wooteco.subway.domain.Line;
+import wooteco.subway.domain.Station;
 import wooteco.subway.dto.LineRequest;
 import wooteco.subway.dto.LineResponse;
 import wooteco.subway.dto.LineUpdateRequest;
@@ -29,13 +29,17 @@ import wooteco.subway.exception.NotFoundLineException;
 @JdbcTest
 class LineServiceTest {
 
-    StationResponse createdStation1;
-    StationResponse createdStation2;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
     private LineService lineService;
     private StationService stationService;
+
+    private StationResponse createdStation1;
+    private StationResponse createdStation2;
+
+    private Station station1;
+    private Station station2;
 
     @BeforeEach
     void setUp() {
@@ -92,27 +96,27 @@ class LineServiceTest {
     @Test
     void getAllLines() {
         // given
-        Line line1 = new Line("1호선", "bg-blue-600");
-        Line line2 = new Line("2호선", "bg-green-600");
-        LineRequest lineRequest1 = new LineRequest(line1.getName(), line1.getColor(), createdStation1.getId(),
+        String lineName1 = "1호선";
+        String lineColor1 = "bg-blue-600";
+        String lineName2 = "2호선";
+        String lineColor2 = "bg-green-600";
+        LineRequest lineRequest1 = new LineRequest(lineName1, lineColor1, createdStation1.getId(),
                 createdStation2.getId(), 10);
-        LineRequest lineRequest2 = new LineRequest(line2.getName(), line2.getColor(), createdStation1.getId(),
+        LineRequest lineRequest2 = new LineRequest(lineName2, lineColor2, createdStation1.getId(),
                 createdStation2.getId(), 10);
 
         lineService.createLine(lineRequest1);
         lineService.createLine(lineRequest2);
 
         // when
-        List<Line> actual = lineService.getAllLines().stream()
-                .map(lineResponse -> new Line(lineResponse.getName(), lineResponse.getColor()))
+        List<String> actualNames = lineService.getAllLines()
+                .stream()
+                .map(LineResponse::getName)
                 .collect(Collectors.toList());
 
-        List<String> actualNames = actual.stream()
-                .map(Line::getName)
-                .collect(Collectors.toList());
-
-        List<String> actualColors = actual.stream()
-                .map(Line::getColor)
+        List<String> actualColors = lineService.getAllLines()
+                .stream()
+                .map(LineResponse::getColor)
                 .collect(Collectors.toList());
 
         List<String> expectedNames = List.of("1호선", "2호선");
@@ -129,8 +133,9 @@ class LineServiceTest {
     @Test
     void getLineById() {
         // given
-        Line line = new Line("1호선", "bg-blue-600");
-        LineRequest lineRequest = new LineRequest(line.getName(), line.getColor(), createdStation1.getId(),
+        String lineName = "1호선";
+        String lineColor = "bg-blue-600";
+        LineRequest lineRequest = new LineRequest(lineName, lineColor, createdStation1.getId(),
                 createdStation2.getId(), 10);
 
         LineResponse createdLine = lineService.createLine(lineRequest);
@@ -150,14 +155,16 @@ class LineServiceTest {
     @Test
     void updateLine() {
         // given
-        Line line = new Line("1호선", "bg-blue-600");
-        LineRequest lineRequest = new LineRequest(line.getName(), line.getColor(), createdStation1.getId(),
-                createdStation2.getId(), 10);
+        String lineName = "1호선";
+        String lineColor = "bg-blue-600";
+        LineRequest lineRequest = new LineRequest(lineName, lineColor, createdStation1.getId(), createdStation2.getId(),
+                10);
         LineResponse createdLine = lineService.createLine(lineRequest);
 
         // when
-        Line newLine = new Line("2호선", "bg-red-600");
-        LineUpdateRequest lineUpdateRequest = new LineUpdateRequest(newLine.getName(), newLine.getColor());
+        String newLineName = "2호선";
+        String newLineColor = "bg-red-600";
+        LineUpdateRequest lineUpdateRequest = new LineUpdateRequest(newLineName, newLineColor);
         lineService.update(createdLine.getId(), lineUpdateRequest);
 
         // then
@@ -172,8 +179,9 @@ class LineServiceTest {
     @Test
     void update_throwsExceptionIfLineIdIsNotExisting() {
         // given
-        Line newLine = new Line("2호선", "bg-red-600");
-        LineUpdateRequest lineUpdateRequest = new LineUpdateRequest(newLine.getName(), newLine.getColor());
+        String newLineName = "2호선";
+        String newLineColor = "bg-red-600";
+        LineUpdateRequest lineUpdateRequest = new LineUpdateRequest(newLineName, newLineColor);
 
         // when & then
         assertThatThrownBy(() -> lineService.update(10L, lineUpdateRequest))
@@ -184,9 +192,10 @@ class LineServiceTest {
     @Test
     void delete() {
         // given
-        Line line = new Line("1호선", "bg-blue-600");
-        LineRequest lineRequest = new LineRequest(line.getName(), line.getColor(), createdStation1.getId(),
-                createdStation2.getId(), 10);
+        String lineName = "1호선";
+        String lineColor = "bg-blue-600";
+        LineRequest lineRequest = new LineRequest(lineName, lineColor, createdStation1.getId(), createdStation2.getId(),
+                10);
         LineResponse createdLine = lineService.createLine(lineRequest);
 
         // when

@@ -6,35 +6,35 @@ import java.util.Objects;
 
 public class Section {
     private final Long id;
-    private final Long upStationId;
-    private final Long downStationId;
+    private final Station upStation;
+    private final Station downStation;
     private final Distance distance;
 
-    public Section(Long id, Long upStationId, Long downStationId, Distance distance) {
+    public Section(Long id, Station upStation, Station downStation, Distance distance) {
         this.id = id;
-        this.upStationId = upStationId;
-        this.downStationId = downStationId;
+        this.upStation = upStation;
+        this.downStation = downStation;
         this.distance = distance;
     }
 
-    public Section(Long upStationId, Long downStationId, Distance distance) {
-        this(null, upStationId, downStationId, distance);
+    public Section(Station upStation, Station downStation, Distance distance) {
+        this(null, upStation, downStation, distance);
     }
 
     public Section(Long id, Section section) {
-        this(id, section.getUpStationId(), section.getDownStationId(), section.getDistance());
+        this(id, section.getUpStation(), section.getDownStation(), section.getDistance());
     }
 
     public static Section merge(Section upSection, Section downSection) {
-        return new Section(upSection.upStationId, downSection.downStationId, upSection.addDistance(downSection));
+        return new Section(upSection.upStation, downSection.downStation, upSection.addDistance(downSection));
     }
 
     public boolean isUpStationSame(Section other) {
-        return upStationId.equals(other.upStationId);
+        return upStation.equals(other.upStation);
     }
 
     public boolean isDownStationSame(Section other) {
-        return downStationId.equals(other.downStationId);
+        return downStation.equals(other.downStation);
     }
 
     public boolean isEitherUpStationOrDownStationSame(Section other) {
@@ -46,17 +46,16 @@ public class Section {
     }
 
     public boolean hasSameStation(Section other) {
-        HashSet<Long> stationIds = new HashSet<>(
-                List.of(upStationId, downStationId, other.upStationId, other.downStationId));
-        return stationIds.size() < 4;
+        HashSet<Station> stations = new HashSet<>(List.of(upStation, downStation, other.upStation, other.downStation));
+        return stations.size() < 4;
     }
 
-    public boolean hasStationIdAsUpStation(Long stationId) {
-        return upStationId.equals(stationId);
+    public boolean hasStationIdAsUpStation(Station station) {
+        return upStation.equals(station);
     }
 
-    public boolean hasStationIdAsDownStation(Long stationId) {
-        return downStationId.equals(stationId);
+    public boolean hasStationIdAsDownStation(Station station) {
+        return downStation.equals(station);
     }
 
     public Distance addDistance(Section other) {
@@ -71,12 +70,12 @@ public class Section {
         return id;
     }
 
-    public Long getUpStationId() {
-        return upStationId;
+    public Station getUpStation() {
+        return upStation;
     }
 
-    public Long getDownStationId() {
-        return downStationId;
+    public Station getDownStation() {
+        return downStation;
     }
 
     public Distance getDistance() {
@@ -92,22 +91,22 @@ public class Section {
             return false;
         }
         Section section = (Section) o;
-        return Objects.equals(id, section.id) && Objects.equals(upStationId, section.upStationId)
-                && Objects.equals(downStationId, section.downStationId) && Objects.equals(distance,
+        return Objects.equals(id, section.id) && Objects.equals(upStation, section.upStation)
+                && Objects.equals(downStation, section.downStation) && Objects.equals(distance,
                 section.distance);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, upStationId, downStationId, distance);
+        return Objects.hash(id, upStation, downStation, distance);
     }
 
     @Override
     public String toString() {
         return "Section{" +
                 "id=" + id +
-                ", upStationId=" + upStationId +
-                ", downStationId=" + downStationId +
+                ", upStation=" + upStation +
+                ", downStation=" + downStation +
                 ", distance=" + distance +
                 '}';
     }

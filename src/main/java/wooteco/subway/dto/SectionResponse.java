@@ -16,7 +16,8 @@ public class SectionResponse {
     }
 
     public SectionResponse(Section section) {
-        this(section.getId(), section.getUpStationId(), section.getDownStationId(), section.getDistance().getValue());
+        this(section.getId(), section.getUpStation().getId(), section.getDownStation().getId(),
+                section.getDistance().getValue());
     }
 
     public Long getId() {
